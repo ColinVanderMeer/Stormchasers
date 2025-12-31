@@ -1,4 +1,5 @@
 extends RigidBody3D
+class_name RaycastCar
 
 @export var wheels: Array[RaycastWheel]
 @export var acceleration := 600.0
@@ -8,6 +9,8 @@ extends RigidBody3D
 @export var tire_max_turn_degrees := 25
 
 @export var skid_marks: Array[GPUParticles3D]
+
+@onready var total_wheels := wheels.size()
 
 var motor_input := 0
 var hand_break := false
@@ -29,29 +32,37 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_released("decelerate"):
 		motor_input += 1
 
-func _basic_steering_rotation(delta: float) -> void:
+func _basic_steering_rotation(wheel: RaycastWheel, delta: float) -> void:
+	if not wheel.is_steer: return
+	
 	var turn_input := Input.get_axis("turn_right", "turn_left")
 	
 	if turn_input:
-		$WheelFL.rotation.y = clampf($WheelFL.rotation.y + turn_input * delta, 
-			deg_to_rad(-tire_max_turn_degrees), deg_to_rad(tire_max_turn_degrees))
-		$WheelFR.rotation.y = clampf($WheelFR.rotation.y + turn_input * delta, 
+		wheel.rotation.y = clampf(wheel.rotation.y + turn_input * delta, 
 			deg_to_rad(-tire_max_turn_degrees), deg_to_rad(tire_max_turn_degrees))
 	else:
-		$WheelFL.rotation.y = move_toward($WheelFL.rotation.y, 0, tire_turn_speed * delta)
-		$WheelFR.rotation.y = move_toward($WheelFR.rotation.y, 0, tire_turn_speed * delta)
+		wheel.rotation.y = move_toward(wheel.rotation.y, 0, tire_turn_speed * delta)
 
 func _physics_process(delta: float) -> void:
-	_basic_steering_rotation(delta)
 	var grounded := 0
 	var id := 0
 	for wheel in wheels:
+		wheel.apply_wheel_physics(self)
+		_basic_steering_rotation(wheel, delta)
+		
+		skid_marks[id].global_position = wheel.get_collision_point() + Vector3.UP * 0.01
+		skid_marks[id].look_at(skid_marks[id].global_position + global_basis.z)
+		
+		if not hand_break and wheel.grip_factor < 0.2:
+			is_slipping = false
+			skid_marks[id].emitting = false
+		
+		if hand_break and not skid_marks[id].emitting:
+				skid_marks[id].emitting = true
+		
 		if wheel.is_colliding():
 			grounded += 1
-		wheel.force_raycast_update()
-		_do_single_wheel_suspension(wheel)
-		_do_single_wheel_acceleration(wheel)
-		_do_single_wheel_traction(wheel, id)
+			
 		id += 1
 		
 	if grounded >= 2:
@@ -73,19 +84,7 @@ func _do_single_wheel_traction(ray: RaycastWheel, idx: int) -> void:
 	var grip_factor := absf(steering_x_vel/tire_velocity.length())
 	var x_traction := ray.grip_curve.sample_baked(grip_factor)
 	
-	skid_marks[idx].global_position = ray.get_collision_point() + Vector3.UP * 0.01
-	skid_marks[idx].look_at(skid_marks[idx].global_position + global_basis.z)
-	
-	if not hand_break and grip_factor < 0.2:
-		is_slipping = false
-		skid_marks[idx].emitting = false
-	
-	
-	if hand_break:
-		x_traction = 0.01
-		if not skid_marks[idx].emitting:
-			skid_marks[idx].emitting = true
-	elif is_slipping:
+	if is_slipping:
 		x_traction = 0.2
 	
 	var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
