@@ -50,6 +50,11 @@ func _physics_process(delta: float) -> void:
 		wheel.apply_wheel_physics(self)
 		_basic_steering_rotation(wheel, delta)
 		
+		if Input.is_action_pressed("brake"):
+			wheel.is_breaking = true
+		else:
+			wheel.is_breaking = false
+		
 		skid_marks[id].global_position = wheel.get_collision_point() + Vector3.UP * 0.01
 		skid_marks[id].look_at(skid_marks[id].global_position + global_basis.z)
 		

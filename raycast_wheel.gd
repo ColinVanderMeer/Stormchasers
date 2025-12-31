@@ -8,6 +8,7 @@ class_name RaycastWheel
 @export var over_extend := 0.2
 @export var wheel_radius := 0.4
 @export var z_traction := 0.05
+@export var z_brake_traction := 0.25
 
 @export_category("Motor")
 @export var is_motor := false
@@ -18,6 +19,7 @@ class_name RaycastWheel
 
 var engine_force := 0.0
 var grip_factor := 0.0
+var is_breaking := false
 
 func _ready() -> void:
 	target_position.y = -(rest_dist + wheel_radius + over_extend)
@@ -33,10 +35,10 @@ func apply_wheel_physics(car: RaycastCar) -> void:
 	if not is_colliding(): return
 	
 	var contact := get_collision_point()
-	var spring_len := global_position.distance_to(contact) - wheel_radius
+	var spring_len := maxf(0.0, global_position.distance_to(contact) - wheel_radius)
 	var offset := rest_dist - spring_len
 
-	wheel.position.y = -spring_len
+	wheel.position.y = move_toward(wheel.position.y, -spring_len, 5 * get_physics_process_delta_time())
 	contact = wheel.global_position
 	var force_pos := contact - car.global_position
 	
@@ -72,6 +74,8 @@ func apply_wheel_physics(car: RaycastCar) -> void:
 	## Tire Z traction (Longidutinasl)
 	var f_vel := forward_dir.dot(tire_vel)
 	var z_friction := z_traction
+	if is_breaking:
+		z_friction = z_brake_traction
 	var z_force := global_basis.z * f_vel * z_friction * ((car.mass * gravity)/car.total_wheels)
 
 	car.apply_force(y_force, force_pos)

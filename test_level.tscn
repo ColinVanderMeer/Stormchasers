@@ -1,9 +1,11 @@
-[gd_scene load_steps=28 format=3 uid="uid://dl05yephnx5fh"]
+[gd_scene load_steps=30 format=3 uid="uid://dl05yephnx5fh"]
 
 [ext_resource type="Texture2D" uid="uid://dqmr84qadchpw" path="res://addons/kenney_prototype_textures/dark/texture_07.png" id="1_gojnm"]
 [ext_resource type="Script" uid="uid://ciehw38m2f4v7" path="res://raycast_car.gd" id="2_1c2mv"]
 [ext_resource type="Texture2D" uid="uid://b55nwxc7cjs5" path="res://addons/kenney_prototype_textures/light/texture_06.png" id="4_4ptq8"]
+[ext_resource type="Curve" uid="uid://c1oyb61bw0l34" path="res://tire_grip_back.tres" id="4_gbhdq"]
 [ext_resource type="Script" uid="uid://ctfbbsj7qst2y" path="res://raycast_wheel.gd" id="4_sb12i"]
+[ext_resource type="Script" uid="uid://djeesr4kfdjxl" path="res://car_follow_camera.gd" id="5_sb12i"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_hsoxx"]
 sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
@@ -32,8 +34,11 @@ size = Vector3(10, 1, 10)
 [sub_resource type="BoxShape3D" id="BoxShape3D_sb12i"]
 size = Vector3(10, 1, 10)
 
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_gbhdq"]
+friction = 0.0
+
 [sub_resource type="Curve" id="Curve_4ptq8"]
-_data = [Vector2(0, 0.3), 0.0, 0.0, 0, 0, Vector2(0.3, 0.90000004), 0.0, 0.0, 0, 0, Vector2(0.6, 0.7), 0.0, 0.0, 0, 0, Vector2(1, 0.1), 0.0, 0.0, 0, 0]
+_data = [Vector2(0, 0.3), 0.0, 0.0, 0, 0, Vector2(0.2, 0.90000004), 0.0, 0.0, 0, 0, Vector2(0.6, 0.7), 0.0, 0.0, 0, 0, Vector2(1, 0.1), 0.0, 0.0, 0, 0]
 point_count = 4
 metadata/_snap_enabled = true
 
@@ -54,12 +59,6 @@ size = Vector3(2, 0.5, 4)
 
 [sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_4ptq8"]
 points = PackedVector3Array(1, 0, -2, -1, 0, -2, -1, 0, 2, 1, 0, 2, 0, 0.7, 2, 0, 0.7, -2)
-
-[sub_resource type="Curve" id="Curve_sb12i"]
-_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.5, 0.8), 0.0, 0.0, 0, 0, Vector2(1, 0.1), 0.0, 0.0, 0, 0]
-point_count = 3
-metadata/_snap_enabled = true
-metadata/_snap_count = 20
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sb12i"]
 albedo_texture = ExtResource("4_4ptq8")
@@ -124,10 +123,12 @@ shape = SubResource("BoxShape3D_sb12i")
 [node name="Car" type="RigidBody3D" parent="." node_paths=PackedStringArray("wheels", "skid_marks")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3230761, 0)
 mass = 50.0
+physics_material_override = SubResource("PhysicsMaterial_gbhdq")
 gravity_scale = 1.3
+linear_damp_mode = 1
 script = ExtResource("2_1c2mv")
 wheels = [NodePath("WheelFL"), NodePath("WheelFR"), NodePath("WheelRL"), NodePath("WheelRR")]
-max_speed = 60.0
+max_speed = 80.0
 accel_curve = SubResource("Curve_4ptq8")
 skid_marks = [NodePath("SkidMarks/GPUParticles3D"), NodePath("SkidMarks/GPUParticles3D2"), NodePath("SkidMarks/GPUParticles3D3"), NodePath("SkidMarks/GPUParticles3D4")]
 
@@ -153,7 +154,7 @@ enabled = false
 script = ExtResource("4_sb12i")
 over_extend = 0.3
 is_steer = true
-grip_curve = SubResource("Curve_sb12i")
+grip_curve = ExtResource("4_gbhdq")
 
 [node name="Wheel" type="MeshInstance3D" parent="Car/WheelFL"]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, -0.5, 0)
@@ -166,7 +167,7 @@ enabled = false
 script = ExtResource("4_sb12i")
 over_extend = 0.3
 is_steer = true
-grip_curve = SubResource("Curve_sb12i")
+grip_curve = ExtResource("4_gbhdq")
 
 [node name="Wheel" type="MeshInstance3D" parent="Car/WheelFR"]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, -0.5, 0)
@@ -179,7 +180,7 @@ enabled = false
 script = ExtResource("4_sb12i")
 over_extend = 0.3
 is_motor = true
-grip_curve = SubResource("Curve_sb12i")
+grip_curve = ExtResource("4_gbhdq")
 
 [node name="Wheel" type="MeshInstance3D" parent="Car/WheelRL"]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, -0.5, 0)
@@ -192,7 +193,7 @@ enabled = false
 script = ExtResource("4_sb12i")
 over_extend = 0.3
 is_motor = true
-grip_curve = SubResource("Curve_sb12i")
+grip_curve = ExtResource("4_gbhdq")
 
 [node name="Wheel" type="MeshInstance3D" parent="Car/WheelRR"]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, -0.5, 0)
@@ -200,8 +201,10 @@ material_override = SubResource("StandardMaterial3D_sb12i")
 mesh = SubResource("CylinderMesh_gbhdq")
 
 [node name="Camera3D" type="Camera3D" parent="Car"]
-transform = Transform3D(1, 1.3464261e-08, 7.038947e-09, -1.5135724e-08, 0.84259343, 0.5385502, 1.3202097e-09, -0.5385502, 0.84259343, 0, 3.7514462, 5.253053)
+transform = Transform3D(1, 1.3464261e-08, 7.038947e-09, -1.5135724e-08, 0.84259343, 0.5385502, 1.3202097e-09, -0.5385502, 0.84259343, 0, 5.0745225, 5.253053)
+top_level = true
 fov = 90.0
+script = ExtResource("5_sb12i")
 
 [node name="SkidMarks" type="Node3D" parent="Car"]
 
